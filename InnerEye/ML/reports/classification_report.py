@@ -321,7 +321,9 @@ def plot_image_for_subject(subject_id: str,
                            dataset_file_column: str,
                            dataset_dir: Path,
                            im_size: Tuple,
-                           model_output: float) -> None:
+                           model_output: float,
+                           visualization_folder: Optional[Path],
+                           vis_prefix: str) -> None:
     """
     Given a subject ID, plots the corresponding image.
     :param subject_id: Subject to plot image for
@@ -351,9 +353,43 @@ def plot_image_for_subject(subject_id: str,
     if not success:
         print_header("Unable to plot image: image must be 2D with shape [w, h] or [1, w, h].", level=0)
 
+    if visualization_folder.exists():
+        # Path to np image
+        subject_folder = visualization_folder / (vis_prefix + subject_id)
+        image_file = subject_folder / "image.npy"
+        gradcam_file = subject_folder / "gradcam.npy"
+        guided_grad_cam_file = subject_folder / "guided_grad_cam.npy"
+
+        image = np.load(str(image_file)).squeeze(1)
+        _gradcam = np.load(str(gradcam_file))[0, 0]
+        gradcam = np.zeros(image.shape)
+        gradcam[1] = _gradcam
+        gradcam = gradcam + image
+        guided = np.load(str(guided_grad_cam_file)).squeeze(1)
+        guided = 2*guided + image
+
+        min = gradcam.min()
+        max = gradcam.max()
+        gradcam = (gradcam - min) / (max - min)
+        gradcam = gradcam * 255.
+        gradcam = gradcam.astype(np.uint8)
+
+        min = guided.min()
+        max = guided.max()
+        guided = (guided - min) / (max - min)
+        guided = guided * 255.
+        guided = guided.astype(np.uint8)
+
+        blank = np.ones([3, 50, 224])
+
+        image = np.concatenate([gradcam, blank, guided], axis=1).shape
+        print_header("", level=4)
+        display(Image.fromarray(image).resize(498*2, 224*2))
+
 
 def plot_k_best_and_worst_performing(val_metrics_csv: Path, test_metrics_csv: Path, k: int, dataset_csv_path: Path,
-                                     dataset_subject_column: str, dataset_file_column: str) -> None:
+                                     dataset_subject_column: str, dataset_file_column: str,
+                                     visualization_folder: Optional[Path], vis_prefix: str) -> None:
     """
     Plot images for the top "k" best predictions (i.e. correct classifications where the model was the most certain)
     and the top "k" worst predictions (i.e. misclassifications where the model was the most confident).
@@ -377,7 +413,9 @@ def plot_k_best_and_worst_performing(val_metrics_csv: Path, test_metrics_csv: Pa
                                dataset_file_column=dataset_file_column,
                                dataset_dir=dataset_dir,
                                im_size=im_size,
-                               model_output=model_output)
+                               model_output=model_output,
+                               visualization_folder=visualization_folder,
+                               vis_prefix=vis_prefix)
 
     print_header(f"Top {k} false negatives", level=2)
     for index, (subject, model_output) in enumerate(zip(results.false_negatives[LoggingColumns.Patient.value],
@@ -388,7 +426,9 @@ def plot_k_best_and_worst_performing(val_metrics_csv: Path, test_metrics_csv: Pa
                                dataset_file_column=dataset_file_column,
                                dataset_dir=dataset_dir,
                                im_size=im_size,
-                               model_output=model_output)
+                               model_output=model_output,
+                               visualization_folder=visualization_folder,
+                               vis_prefix=vis_prefix)
 
     print_header(f"Top {k} true positives", level=2)
     for index, (subject, model_output) in enumerate(zip(results.true_positives[LoggingColumns.Patient.value],
@@ -399,7 +439,9 @@ def plot_k_best_and_worst_performing(val_metrics_csv: Path, test_metrics_csv: Pa
                                dataset_file_column=dataset_file_column,
                                dataset_dir=dataset_dir,
                                im_size=im_size,
-                               model_output=model_output)
+                               model_output=model_output,
+                               visualization_folder=visualization_folder,
+                               vis_prefix=vis_prefix)
 
     print_header(f"Top {k} true negatives", level=2)
     for index, (subject, model_output) in enumerate(zip(results.true_negatives[LoggingColumns.Patient.value],
@@ -410,4 +452,6 @@ def plot_k_best_and_worst_performing(val_metrics_csv: Path, test_metrics_csv: Pa
                                dataset_file_column=dataset_file_column,
                                dataset_dir=dataset_dir,
                                im_size=im_size,
-                               model_output=model_output)
+                               model_output=model_output,
+                               visualization_folder=visualization_folder,
+                               vis_prefix=vis_prefix)

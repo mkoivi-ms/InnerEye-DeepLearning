@@ -550,6 +550,7 @@ class VisualizationMaps:
                     self.imaging_feature_type = ImagingFeatureType.Image
                     np.save(str(subject_dir / "non_image_pseudo_cam.npy"), pseudo_cam_non_img[i])
 
+                """
                 current_label = ground_truth_labels[i, label_index]
 
                 # If the label is NaN it means that we don't have data for this position and
@@ -579,6 +580,7 @@ class VisualizationMaps:
                                     "--to=html",
                                     result_path,
                                     "--no-input"])
+                """
 
     def _get_non_imaging_plot_labels(self, classification_item: Union[ScalarItem,
                                                                       List[ClassificationItemSequence[ScalarItem]]],

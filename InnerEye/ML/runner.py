@@ -180,7 +180,8 @@ class Runner:
                                                      dataset_csv_path=config.local_dataset / DATASET_CSV_FILE_NAME
                                                                         if config.local_dataset else None,
                                                      dataset_subject_column=config.subject_column,
-                                                     dataset_file_column=config.image_file_column)
+                                                     dataset_file_column=config.image_file_column,
+                                                     visualization_folder=str(config.visualization_folder))
                 else:
                     logging.info(f"Cannot create report for config of type {type(config)}.")
         except Exception as ex:

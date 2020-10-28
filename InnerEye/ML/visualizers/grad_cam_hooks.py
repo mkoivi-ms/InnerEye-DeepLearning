@@ -518,6 +518,8 @@ class VisualizationMaps:
                                                                                     target_position,
                                                                                     label_index)
             for i in range(batch_size):
+                subject_dir = gradcam_dir / filenames[i]
+                subject_dir.mkdir(exist_ok=True)
                 if not self.is_non_imaging_model:
                     non_imaging_labels = self._get_non_imaging_plot_labels(
                         classification_sequence,  # type: ignore
@@ -533,11 +535,11 @@ class VisualizationMaps:
 
                     # Need to temporarily save the variables to access them from the notebook.
                     # Because papermill does not support passing numpy array as parameters.
-                    np.save(str(gradcam_dir / "image.npy"), image)
-                    np.save(str(gradcam_dir / "gradcam.npy"), grad_cams[i])
-                    np.save(str(gradcam_dir / "guided_grad_cam.npy"), guided_grad_cams[i])
+                    np.save(str(subject_dir / "image.npy"), image)
+                    np.save(str(subject_dir / "gradcam.npy"), grad_cams[i])
+                    np.save(str(subject_dir / "guided_grad_cam.npy"), guided_grad_cams[i])
                     if has_non_image_features:
-                        np.save(str(gradcam_dir / "non_image_pseudo_cam.npy"), pseudo_cam_non_img[i])
+                        np.save(str(subject_dir / "non_image_pseudo_cam.npy"), pseudo_cam_non_img[i])
                     has_image_features = True
                 else:
                     non_imaging_labels = self._get_non_imaging_plot_labels(
@@ -546,7 +548,7 @@ class VisualizationMaps:
                     has_image_features = False
                     self.encode_channels_jointly = False
                     self.imaging_feature_type = ImagingFeatureType.Image
-                    np.save(str(gradcam_dir / "non_image_pseudo_cam.npy"), pseudo_cam_non_img[i])
+                    np.save(str(subject_dir / "non_image_pseudo_cam.npy"), pseudo_cam_non_img[i])
 
                 current_label = ground_truth_labels[i, label_index]
 

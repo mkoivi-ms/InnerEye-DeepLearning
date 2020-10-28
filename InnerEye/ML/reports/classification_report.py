@@ -382,7 +382,7 @@ def plot_image_for_subject(subject_id: str,
 
         blank = np.ones([3, 50, 224])
 
-        image = np.concatenate([gradcam, blank, guided], axis=1).shape
+        image = np.concatenate([gradcam, blank, guided], axis=1)
         print_header("", level=4)
         display(Image.fromarray(image).resize(498*2, 224*2))
 

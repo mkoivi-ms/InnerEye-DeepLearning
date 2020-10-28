@@ -208,6 +208,9 @@ class GradCam(GradientBasedFeatureExtractor):
 
         B, C_in = input[0].shape[:2]
         Z, X, Y = input[0].shape[-3:]
+        if not self.conv_in_3d:
+            activations = activations[:, :, :, None, :, :]
+            gradients = gradients[:, :, :, None, :, :]
         B_act, _, C_act, Z_act, X_act, Y_act = activations.shape
         if self.conv_in_3d:
             weights = torch.mean(gradients, dim=(3, 4, 5), keepdim=True)

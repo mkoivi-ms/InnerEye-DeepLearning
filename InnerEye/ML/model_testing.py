@@ -24,6 +24,7 @@ from InnerEye.ML.common import ModelExecutionMode, STORED_CSV_FILE_NAMES
 from InnerEye.ML.config import DATASET_ID_FILE, GROUND_TRUTH_IDS_FILE, IMAGE_CHANNEL_IDS_FILE, SegmentationModelBase
 from InnerEye.ML.dataset.full_image_dataset import FullImageDataset
 from InnerEye.ML.dataset.sample import PatientMetadata, Sample
+from InnerEye.ML.dataset.scalar_sample import ScalarItem
 from InnerEye.ML.metrics import InferenceMetrics, InferenceMetricsForClassification, InferenceMetricsForSegmentation, \
     compute_scalar_metrics
 from InnerEye.ML.model_config_base import ModelConfigBase
@@ -41,6 +42,7 @@ from InnerEye.ML.utils.io_util import ImageHeader, MedicalImageFileType, load_ni
 from InnerEye.ML.utils.metrics_constants import MetricsFileColumns
 from InnerEye.ML.utils.metrics_util import MetricsPerPatientWriter
 from InnerEye.ML.utils.run_recovery import RunRecovery, get_recovery_path_test
+from InnerEye.ML.visualizers.grad_cam_hooks import VisualizationMaps
 
 BOXPLOT_FILE = "metrics_boxplot.png"
 THUMBNAILS_FOLDER = "thumbnails"
@@ -416,6 +418,14 @@ def classification_model_test(config: ScalarModelBase,
 
         logging.info(f"Starting to evaluate model from epoch {test_epoch} on {data_split.value} set.")
         metrics_dict = create_metrics_dict_from_config(config)
+
+        compute_grad_cam = config.compute_grad_cam and isinstance(pipeline, ScalarInferencePipeline)
+
+        if compute_grad_cam:
+            model_to_evaluate = pipeline.model
+            guided_grad_cam = VisualizationMaps(model_to_evaluate, config)
+            config.visualization_folder.mkdir(exist_ok=True)
+
         for sample in ds:
             result = pipeline.predict(sample)
             # Since batch size is 1, we only have 1 item in each of the fields in result
@@ -424,12 +434,26 @@ def classification_model_test(config: ScalarModelBase,
             compute_scalar_metrics(metrics_dict, [sample_id], model_output, label_gpu, config.loss_type)
             logging.debug(f"Example {sample_id}: {metrics_dict.to_string()}")
 
+            if compute_grad_cam:
+                scalar_item = ScalarItem.from_dict(sample)
+                subject_ids = [str(x.id) for x in scalar_item.metadata]
+                model_inputs = model_to_evaluate.get_input_tensors(scalar_item)
+                filenames = [f"{data_split.value}_viz_{id}" for id in subject_ids]
+                guided_grad_cam.save_visualizations_in_notebook(
+                    scalar_item,  # type: ignore
+                    model_inputs,
+                    filenames,
+                    ground_truth_labels=label_gpu.cpu().numpy(),
+                    gradcam_dir=config.visualization_folder
+                )
+
         average = metrics_dict.average(across_hues=False)
         logging.info(average.to_string())
 
         return metrics_dict
 
     results: Dict[int, MetricsDict] = {}
+
     for epoch in config.get_test_epochs():
         epoch_result = test_epoch(test_epoch=epoch, run_recovery=run_recovery)
         if epoch_result is None:

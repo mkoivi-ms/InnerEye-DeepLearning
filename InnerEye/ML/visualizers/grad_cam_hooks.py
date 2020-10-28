@@ -4,6 +4,7 @@
 #  ------------------------------------------------------------------------------------------
 import os
 import subprocess
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -222,6 +223,9 @@ class GradCam(GradientBasedFeatureExtractor):
 
         low_dim_cam = torch.nn.functional.relu(torch.mul(activations, weights).sum(dim=2))
         del weights, list_activations, activations
+
+        logging.info(f"Low dim cam shape is {low_dim_cam.shape}. B: {B}, C_in: {C_in}, Z_low: {Z_low}, "
+                     f"X_act: {X_act}, Y_act: {Y_act}.")
 
         # Case one separate encoding per channel i.e. one GradCam map per channel
         if not self.encode_jointly:

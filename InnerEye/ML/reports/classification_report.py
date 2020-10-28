@@ -360,13 +360,18 @@ def plot_image_for_subject(subject_id: str,
         gradcam_file = subject_folder / "gradcam.npy"
         guided_grad_cam_file = subject_folder / "guided_grad_cam.npy"
 
-        image = np.load(str(image_file)).squeeze(1)
+        image = np.load(str(image_file)).squeeze(1).transpose(1, 2, 0)
         _gradcam = np.load(str(gradcam_file))[0, 0]
         gradcam = np.zeros(image.shape)
-        gradcam[1] = _gradcam
-        gradcam = gradcam + image
-        guided = np.load(str(guided_grad_cam_file)).squeeze(1)
-        guided = 2*guided + image
+        gradcam[:, :, 1] = _gradcam
+        guided = np.load(str(guided_grad_cam_file)).squeeze(1).transpose(1, 2, 0)
+
+
+        min = image.min()
+        max = image.max()
+        image = (image - min) / (max - min)
+        image = image * 255.
+        image = image.astype(np.uint8)
 
         min = gradcam.min()
         max = gradcam.max()
@@ -380,11 +385,14 @@ def plot_image_for_subject(subject_id: str,
         guided = guided * 255.
         guided = guided.astype(np.uint8)
 
-        blank = np.ones([3, 50, 224])
+        gradcam = 0.75*gradcam + 0.25*image
+        guided = 0.90*guided + 0.1*image
 
-        image = np.concatenate([gradcam, blank, guided], axis=1)
+        blank = np.zeros([224, 50, 3])
+
+        image = np.concatenate([gradcam, blank, guided], axis=1).astype(np.uint8)
         print_header("", level=4)
-        display(Image.fromarray(image).resize(498*2, 224*2))
+        display(Image.fromarray(image).resize((498*2, 224*2)))
 
 
 def plot_k_best_and_worst_performing(val_metrics_csv: Path, test_metrics_csv: Path, k: int, dataset_csv_path: Path,

@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 import numpy as np
+import io
 
 from dataclasses import dataclass
 from sklearn.metrics import precision_recall_curve, roc_curve, auc, roc_auc_score, recall_score
@@ -361,11 +362,8 @@ def plot_image_for_subject(subject_id: str,
         guided_grad_cam_file = subject_folder / "guided_grad_cam.npy"
 
         image = np.load(str(image_file)).squeeze(1).transpose(1, 2, 0)
-        _gradcam = np.load(str(gradcam_file))[0, 0]
-        gradcam = np.zeros(image.shape)
-        gradcam[:, :, 1] = _gradcam
+        gradcam = np.load(str(gradcam_file))[0,0]
         guided = np.load(str(guided_grad_cam_file)).squeeze(1).transpose(1, 2, 0)
-
 
         min = image.min()
         max = image.max()
@@ -373,6 +371,7 @@ def plot_image_for_subject(subject_id: str,
         image = image * 255.
         image = image.astype(np.uint8)
 
+        """
         min = gradcam.min()
         max = gradcam.max()
         gradcam = (gradcam - min) / (max - min)
@@ -388,11 +387,49 @@ def plot_image_for_subject(subject_id: str,
         gradcam = 0.75*gradcam + 0.25*image
         guided = 0.90*guided + 0.1*image
 
-        blank = np.zeros([224, 50, 3])
+        blank = np.full([224, 50, 3], 255.)
 
         image = np.concatenate([gradcam, blank, guided], axis=1).astype(np.uint8)
         print_header("", level=4)
         display(Image.fromarray(image).resize((498*2, 224*2)))
+        """
+
+        fig, ax = plt.subplots(1, 2)
+        ax[0].imshow(image, cmap=plt.gray())
+        pos = ax[0].imshow(
+            gradcam,
+            vmin=gradcam.min(),
+            vmax=gradcam.max(),
+            cmap=plt.jet(),
+            alpha=0.7
+        )
+        ax[0].set_xticks([])
+        ax[0].set_yticks([])
+        plt.colorbar(pos, plt.jet(), ax[0])
+        ax[0].set_anchor("W")
+
+        ax[1].imshow(image, cmap=plt.gray())
+        for channel in range(guided.shape[2]):
+            pos = ax[1].imshow(
+                guided[:, :, channel],
+                vmin=guided.min(),
+                vmax=guided.max(),
+                cmap=plt.jet(),
+                alpha=0.3
+            )
+        ax[1].set_xticks([])
+        ax[1].set_yticks([])
+        plt.colorbar(pos, plt.jet(), ax[1])
+        ax[1].set_anchor("W")
+
+        with io.BytesIO() as buffer:
+            fig.savefig(buffer, format='raw')
+            buffer.seek(0)
+            image_plot = np.frombuffer(buffer.getvalue(), dtype=np.uint8)
+            image_plot = image_plot.reshape(int(fig.bbox.bounds[3]), int(fig.bbox.bounds[2]), -1)
+
+        print_header("", level=4)
+        display(Image.fromarray(image_plot))
 
 
 def plot_k_best_and_worst_performing(val_metrics_csv: Path, test_metrics_csv: Path, k: int, dataset_csv_path: Path,

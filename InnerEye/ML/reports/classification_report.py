@@ -401,7 +401,7 @@ def plot_image_for_subject(subject_id: str,
             vmin=gradcam.min(),
             vmax=gradcam.max(),
             cmap=plt.jet(),
-            alpha=0.7
+            alpha=0.5
         )
         ax[0].set_xticks([])
         ax[0].set_yticks([])

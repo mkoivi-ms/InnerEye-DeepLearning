@@ -422,11 +422,8 @@ def classification_model_test(config: ScalarModelBase,
         logging.info(f"Starting to evaluate model from epoch {test_epoch} on {data_split.value} set.")
         metrics_dict = create_metrics_dict_from_config(config)
 
-        compute_grad_cam = config.compute_grad_cam and (isinstance(pipeline, ScalarInferencePipeline)
-                                                            or isinstance(pipeline, ScalarEnsemblePipeline))
-
-        if compute_grad_cam:
-            model_to_evaluate = pipeline.model
+        if config.compute_grad_cam:
+            model_to_evaluate = pipeline.pipelines.model if isinstance(pipeline, ScalarEnsemblePipeline) else pipeline.model
             guided_grad_cam = VisualizationMaps(model_to_evaluate, config)
             config.visualization_folder.mkdir(exist_ok=True)
 
@@ -438,7 +435,7 @@ def classification_model_test(config: ScalarModelBase,
             compute_scalar_metrics(metrics_dict, [sample_id], model_output, label_gpu, config.loss_type)
             logging.debug(f"Example {sample_id}: {metrics_dict.to_string()}")
 
-            if compute_grad_cam:
+            if config.compute_grad_cam:
                 scalar_item = ScalarItem.from_dict(sample)
                 subject_ids = [str(x.id) for x in scalar_item.metadata]
                 model_inputs = model_to_evaluate.get_input_tensors(scalar_item)

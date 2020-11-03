@@ -422,7 +422,8 @@ def classification_model_test(config: ScalarModelBase,
         logging.info(f"Starting to evaluate model from epoch {test_epoch} on {data_split.value} set.")
         metrics_dict = create_metrics_dict_from_config(config)
 
-        compute_grad_cam = config.compute_grad_cam and isinstance(pipeline, ScalarInferencePipeline)
+        compute_grad_cam = config.compute_grad_cam and (isinstance(pipeline, ScalarInferencePipeline)
+                                                            or isinstance(pipeline, ScalarEnsemblePipeline))
 
         if compute_grad_cam:
             model_to_evaluate = pipeline.model

@@ -1,0 +1,25 @@
+
+
+Open Azure Machine Learning workspace in ML Imaging Sandbox:
+	-https://ml.azure.com/?wsid=/subscriptions/8c3798d4-ed62-4543-84fc-157911905c8e/resourcegroups/rg-innereye/workspaces/innereye-ml-ws-we&tid=e307563d-5fcd-4e12-a554-9927f388b1cf
+	-Login to Azure in HUS Tenant, if prompted
+
+Create a personal working VM: 
+	-Compute > +New > Select DS_v2 and Next > (type name) and Create.
+	-wait for VM creation
+
+Open VM Terminal
+
+Initialize environment with following commands
+cd
+git clone https://github.com/mkoivi-ms/InnerEye-DeepLearning.git
+cd InnerEye-DeepLearning/
+. ./setup_innereye_hus.sh
+
+Wait for couple of minutes to set up conda environment
+
+Now you have InnerEye environment ready! You can run model training tasks, for example:
+
+python InnerEye/ML/runner.py --azureml=True --model=LungExt --train=True
+
+(you have to log in separately, because I didn't have permission to create a service principal for Azure ML)

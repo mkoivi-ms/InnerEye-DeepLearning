@@ -5,7 +5,8 @@ variables:
   azureml_datastore: 'imaging_datalake_poc'
   resource_group: 'rg-innereye'
   docker_shm_size: '440g'
-  workspace_name: 'imaging-ml-ws-we'
-  cluster: 'training-gpu'
+  workspace_name: 'innereye-ml-ws-we'
+  cluster: 'compute-gpu-nd24'
   model_configs_namespace: ''
   extra_code_directory: ''
+  
